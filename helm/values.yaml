@@ -1,0 +1,8 @@
+replicaCount: 1
+image:
+  repository: myacr.azurecr.io/python-aks-demo
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: LoadBalancer
+  port: 80

@@ -1,0 +1,52 @@
+trigger:
+  - main
+
+variables:
+  imageName: 'python-aks-demo'
+  acrName: 'myacr.azurecr.io'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildAndTest
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.10'
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pytest --maxfail=1 --disable-warnings -q
+      displayName: 'Run Unit Tests'
+
+    - task: Docker@2
+      inputs:
+        command: buildAndPush
+        repository: $(imageName)
+        dockerfile: Dockerfile
+        containerRegistry: $(acrName)
+        tags: |
+          latest
+      displayName: 'Build and Push Docker Image'
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - job: DeployToAKS
+    steps:
+    - task: HelmInstaller@1
+      inputs:
+        helmVersionToInstall: 'latest'
+    - task: HelmDeploy@0
+      inputs:
+        connectionType: 'Kubernetes Service Connection'
+        kubernetesServiceEndpoint: 'aks-service-connection'
+        command: 'upgrade'
+        chartType: 'FilePath'
+        chartPath: 'helm'
+        releaseName: 'python-aks-demo'
+        namespace: 'default'
+        install: true

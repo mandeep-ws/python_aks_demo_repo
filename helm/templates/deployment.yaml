@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-aks-demo
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: python-aks-demo
+  template:
+    metadata:
+      labels:
+        app: python-aks-demo
+    spec:
+      containers:
+      - name: python-aks-demo
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: 8080
